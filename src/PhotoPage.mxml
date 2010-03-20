@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+		initialize="init();" xmlns:aaronhardy="com.aaronhardy.*" show="forceQueuePriority(event)">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Image;
+			import com.aaronhardy.cache.ImageCache;
+			import com.aaronhardy.ImageRendererWithProgress;
+			import com.aaronhardy.ImageRenderer;
+			import com.aaronhardy.services.ServiceQueue;
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			public var dataProvider:ArrayCollection;
+			
+			/**
+			 * The queue instance to be used.
+			 */
+			public var imageCache:ImageCache;
+			
+			/**
+			 * The queue instance to be used.
+			 */
+			public var queue:ServiceQueue;
+			
+			/**
+			 * The category that all requests from the page should use in the request queue.
+			 */
+			public var queueCategory:String;
+			
+			/**
+			 * Whether the queue priority should shift to this page's queue category when this
+			 * page is shown.
+			 */
+			public var priorityShiftingEnabled:Boolean = true;
+			
+			private var _useRegularImageRenderer:Boolean = false;
+			
+			/**
+			 * Whether to use the regular image renderer in place of our custom image renderer.
+			 */
+			public function get useRegularImageRenderer():Boolean
+			{
+				return _useRegularImageRenderer;
+			}
+			
+			/**
+			 * @private
+			 */
+			public function set useRegularImageRenderer(value:Boolean):void
+			{
+				if (_useRegularImageRenderer != value)
+				{
+					_useRegularImageRenderer = value;
+					initImageRenderer();
+				}
+			}
+			
+			/**
+			 * Sets up the renderer class factory to be used in the tile list.
+			 */
+			protected function initImageRenderer():void
+			{
+				var renderer:ClassFactory;
+				
+				if (useRegularImageRenderer)
+				{
+					renderer = new ClassFactory(Image);
+				}
+				else
+				{
+					renderer = new ClassFactory(ImageRendererWithProgress);
+					renderer.properties = {
+						imageCache: imageCache,
+						queue: queue,
+						queueCategory: queueCategory
+					}
+				}
+				
+				tileList.itemRenderer = renderer;
+			}
+			
+			protected function init():void
+			{
+				initImageRenderer();
+			}
+			
+			/**
+			 * Forces the page's queue category to be the top priority in the service queue.
+			 */
+			protected function forceQueuePriority(event:Event):void
+			{
+				if (priorityShiftingEnabled)
+				{
+					queue.forceTopPriority(queueCategory);
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:TileList id="tileList"
+			dataProvider="{dataProvider}"
+			width="100%" height="100%"
+			rowHeight="125" columnWidth="125"
+			borderStyle="none"/>
+</mx:Box>
